@@ -1,12 +1,25 @@
 from bs4 import BeautifulSoup as bs
 import requests
 
-def getUrls():
-    url = 'https://www.ebay.com/sch/i.html?_from=R40&_nkw=ampharos+prime&_sacat=0&_sop=15'
+fullList = []
+urlList = []
+maxList = []
+length = 0
 
+def getLinks():
+    global length
+    input = open('input.txt', 'r')
+    for each in input:
+        url = each.partition(',')[0]
+        max = each.partition(',')[2]
+        urlList.append(url)
+        maxList.append(max)
+        length = length + 1
+    input.close()
+
+def getListings(url):
     # Get the page
     page = requests.get(url)
-
     # Parses the html as text
     soup = bs(page.text,'html5lib')
     urlList = []
@@ -38,24 +51,42 @@ def addTogether(str1, str2):
     return round(final, 2)
 
 #Get price for each URL in list
-def getPrice(urls):
-    priceList = []
-    for url in urls:
-        page = requests.get(url)
-        soup = bs(page.text,'html5lib')
-        #Get the price of the item
-        priceDiv = soup.find("div", {"class": "x-price-primary"})
-        price = priceDiv.find("span", {'class' : 'ux-textspans'}).text
-        price = getNumber(price)
-        #Get the price of shipping
-        shippingDiv = soup.find("div", {"class": "ux-labels-values__values-content"})
-        shipping = shippingDiv.find("span", {'class' : 'ux-textspans ux-textspans--BOLD'}).text
-        shipping = getNumber(shipping)
-        #Add the price and shipping together
+def getPrice(urls, max):
+    max = float(max)
+    global fullList
+    page = requests.get(urls)
+    soup = bs(page.text,'html5lib')
+    #Get the price of the item
+    priceDiv = soup.find("div", {"class": "x-price-primary"})
+    price = priceDiv.find("span", {'class' : 'ux-textspans'}).text
+    price = getNumber(price)
+    #Get the price of shipping
+    shippingDiv = soup.find("div", {"class": "ux-labels-values__values-content"})
+    shipping = shippingDiv.find("span", {'class' : 'ux-textspans ux-textspans--BOLD'}).text
+    shipping = getNumber(shipping)
+    #Add the price and shipping together
+    if type(shipping) != 'float':
+        fullPrice = price
+    else:
         fullPrice = addTogether(price, shipping)
-        #Append price to list
-        priceList.append(fullPrice)
-    print(priceList)
+    fullPrice = float(fullPrice)
+    if fullPrice > max:
+        return False
+    #Append price to list
+    fullList.append([urls, fullPrice])
+    return True
+#Main
+getLinks()
+for each in range(length):
+    url = getListings(urlList[each])
+    for link in url:
+        if (getPrice(link, maxList[each])):
+            continue
+        else: 
+            break
 
-url = getUrls()
-getPrice(url)
+output = open("output.txt",'w')
+for each in fullList:
+    output.write(str(each))
+output.close()
+print(fullList)
