@@ -75,22 +75,31 @@ def getPrice(urls, max):
 
     #Get the price of shipping
     shippingDiv = soup.find("div", {"class": "ux-labels-values__values-content"})
-    shipping = shippingDiv.find("span", {'class' : 'ux-textspans ux-textspans--BOLD'}).text
-    shipping = getNumber(shipping)
+    try:
+        shipping = shippingDiv.find("span", {'class' : 'ux-textspans ux-textspans--BOLD'}).text
+        shipping = getNumber(shipping)
+
+    except Exception:
+        shipping = None
 
     #If shipping isn't a float, then only take price into account
-    if type(shipping) != 'float':
-        fullPrice = price
-    else:
+    if type(shipping) == float:
         fullPrice = addTogether(price, shipping)
-    fullPrice = float(fullPrice)
+    else:
+        fullPrice = price
+
+    #If price isnt a float, then skip the listing    
+    try:
+        fullPrice = float(fullPrice)
+    except Exception:
+        return False
 
     #If price is more than the max, then move onto next item
     if fullPrice > max:
         return False
     
     #Append price to list
-    fullList.append([urls])
+    fullList.append(urls)
     return True
 
 #Main
@@ -113,5 +122,4 @@ output = open("output.txt",'w')
 for each in fullList:
     output.write('%s\n' %each)
 output.close()
-
-print(fullList)
+print("DONE!")
