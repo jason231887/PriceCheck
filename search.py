@@ -122,4 +122,5 @@ output = open("output.txt",'w')
 for each in fullList:
     output.write('%s\n' %each)
 output.close()
+
 print("DONE!")
